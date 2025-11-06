@@ -1,129 +1,174 @@
 import streamlit as st
-import webbrowser
+import folium
+from streamlit_folium import st_folium
+from geopy.geocoders import Nominatim
 
-st.set_page_config(page_title="LifeLink Emergency", page_icon="🚨", layout="wide")
+# ===================== PAGE CONFIG ======================
+st.set_page_config(page_title="LifeLink Emergency Locator", layout="wide")
 
-# ---- Custom Minimalist Background ----
-page_bg = """
+# ===================== CLEAN SOLID UI STYLING ======================
+solid_bg = """
 <style>
+
 [data-testid="stAppViewContainer"] {
-    background-image: url('https://images.unsplash.com/photo-1586773860418-d37222d8fce3?auto=format&fit=crop&w=1600&q=80');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background-color: #0A1A2F; /* Dark Navy Blue */
 }
 
 [data-testid="stSidebar"] {
-    background-color: #0A0A0A;
+    background-color: #00182A !important;
+    border-right: 2px solid #FF4C4C;
 }
 
-.transparent-box {
-    background: rgba(255, 255, 255, 0.80);
+h1, h2, h3, h4, label, p, .stMarkdown, .stRadio, .stTextInput, .stNumberInput, .stSelectbox,
+.stTextArea, .stExpander, .stJson {
+    color: #FFFFFF !important;  /* Pure White for high visibility */
+    font-family: 'Helvetica', sans-serif;
+    font-size: 18px;
+}
+
+.card {
+    background-color: #11263D; 
+    border-radius: 14px;
     padding: 25px;
-    border-radius: 12px;
+    margin-top: 15px;
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
-.center-text {
+.stButton>button {
+    background: #FF3B3B;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    font-weight: bold;
+    border-radius: 10px;
+    transition: 0.25s;
+    font-size: 18px;
+}
+.stButton>button:hover {
+    transform: scale(1.09);
+    background: #D60000;
+}
+
+.stExpander p {
+    color: white !important;
+}
+
+.footer-text {
     text-align: center;
+    color: #FFB9B9;
+    margin-top: 40px;
+    font-size: 15px;
 }
 </style>
 """
-st.markdown(page_bg, unsafe_allow_html=True)
+st.markdown(solid_bg, unsafe_allow_html=True)
 
+# ===================== SIDEBAR NAVIGATION ======================
+st.sidebar.title("Navigate")
+page = st.sidebar.radio("",
+                        ["🏠 Home", "🏥 Hospital Locator",
+                         "🩹 First-Aid Guide", "👤 Medical Profile"])
 
-
-# ---- Sidebar Navigation ----
-st.sidebar.title("🧭 Navigate")
-menu = st.sidebar.radio(
-    "",
-    ["🏠 Home", "🏥 Hospital Locator", "🩹 First-Aid Guide", "🧑‍⚕️ Medical Profile"]
-)
-
-
-
-# ---- HOME SCREEN ----
-if menu == "🏠 Home":
-    st.markdown("<div class='transparent-box center-text'>", unsafe_allow_html=True)
+# ===================== HOME PAGE ======================
+if page == "🏠 Home":
     st.markdown("<h1>🚨 LifeLink Emergency Locator</h1>", unsafe_allow_html=True)
-    st.write("Connecting people to immediate medical help ⚕️")
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("### Helping people reach lifesaving support ⚕️")
 
-    st.write("### Quick Assistance")
+    st.markdown("---")
+    st.subheader("Quick Emergency Help")
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        if st.button("❤️ Heart Attack Help"):
-            st.warning("Call Emergency Immediately!")
-            st.info("Symptoms: Chest pain, breathlessness, sweating")
-            st.success("Take Aspirin if available")
-            st.write("📞 Ambulance: 108")
+        if st.button("❤️ Heart Attack"):
+            st.warning("📞 Call 108 Immediately! Provide aspirin if available.")
     with col2:
-        if st.button("🧠 Stroke Help"):
-            st.warning("Act FAST – Face drooping, Arm weakness, Speech trouble!")
-            st.write("📞 Ambulance: 108")
+        if st.button("🧠 Stroke"):
+            st.warning("FAST: Face droop, Arm weakness, Speech issue — Act now!")
     with col3:
-        if st.button("🚑 Accident Help"):
-            st.warning("Stay Calm. Stop major bleeding immediately.")
-            st.write("📞 Ambulance: 108")
+        if st.button("🚑 Accident"):
+            st.warning("Keep the person calm. Control bleeding. Avoid movement.")
 
-    st.write("---")
-    st.markdown(
-        "<div class='transparent-box center-text'>"
-        "<h3>📞 India Emergency Contacts</h3>"
-        "<b>🚑 Ambulance: 108 | 👮 Police: 100 | 🔥 Fire: 101</b>"
-        "</div>",
-        unsafe_allow_html=True
-    )
+    st.subheader("📞 Emergency Numbers in India:")
+    st.info("🚑 Ambulance: 108 | 👮 Police: 100 | 🔥 Fire: 101")
 
+# ===================== HOSPITAL LOCATOR ======================
+elif page == "🏥 Hospital Locator":
 
+    st.header("🏥 Find Nearest Hospitals")
 
-# ---- HOSPITAL LOCATOR ----
-elif menu == "🏥 Hospital Locator":
-    st.markdown("<div class='transparent-box center-text'>", unsafe_allow_html=True)
-    st.header("🏥 Hospital Locator")
+    user_location = st.text_input("Enter your city / location 🔍 (E.g., Mumbai)")
 
-    st.success("Feature Coming Soon: 'Nearby Hospitals' Auto-Locator using GPS 🌍")
+    if st.button("Search Hospital"):
+        if not user_location.strip():
+            st.error("⚠️ Please enter a valid location.")
+        else:
+            geolocator = Nominatim(user_agent="lifelink-app")
+            loc = geolocator.geocode(user_location)
 
-    st.info("Until then: Search 'Hospitals near me' below 👇")
+            if loc:
+                m = folium.Map(location=[loc.latitude, loc.longitude], zoom_start=13)
+                folium.Marker([loc.latitude, loc.longitude],
+                              tooltip="📍 You are here",
+                              icon=folium.Icon(color='red')).add_to(m)
 
-    if st.button("🔍 Search Hospitals near me"):
-        webbrowser.open("https://www.google.com/maps/search/hospitals+near+me/")
-    st.markdown("</div>", unsafe_allow_html=True)
+                st.success(f"✅ Location Found: {loc.address}")
+                st_folium(m, height=450, width=900)
+            else:
+                st.error("❌ Location not found. Try again!")
 
+# ===================== FIRST AID GUIDE ======================
+elif page == "🩹 First-Aid Guide":
+    st.header("🩹 First Aid Handbook")
 
+    with st.expander("❤️ CPR (Cardiac Emergency)"):
+        st.write("""
+✅ Check breathing & response  
+✅ Call 108  
+✅ Hard chest compressions 100–120/min  
+✅ Do not stop until help arrives  
+        """)
 
-# ---- FIRST AID GUIDE ----
-elif menu == "🩹 First-Aid Guide":
-    st.markdown("<div class='transparent-box center-text'>", unsafe_allow_html=True)
-    st.header("🩹 First-Aid Guide")
+    with st.expander("🩸 Severe Bleeding"):
+        st.write("""
+✅ Apply pressure with clean cloth  
+✅ Elevate injured area  
+❌ Don't remove soaked cloth  
+✅ Seek urgent medical help  
+        """)
 
-    faqs = {
-        "Heavy Bleeding": "Apply pressure with a clean cloth. Do NOT remove cloth if blood soaks.",
-        "Burn Injury": "Cool the burned area under running water for 15 minutes.",
-        "Choking": "Perform Heimlich maneuver — 5 thrusts behind back, 5 chest compressions.",
-        "Fracture": "Immobilize the injured area. Do not move bones yourself!"
-    }
+    with st.expander("🔥 Burns"):
+        st.write("""
+✅ Cool water 20 minutes  
+❌ No toothpaste / oil  
+✅ Cover with clean cloth  
+        """)
 
-    for condition, help_text in faqs.items():
-        if st.button(f"📌 {condition}"):
-            st.warning(help_text)
+# ===================== MEDICAL PROFILE (No Database) ======================
+elif page == "👤 Medical Profile":
+    st.header("👤 Your Medical Details")
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    if "profile" not in st.session_state:
+        st.session_state.profile = {}
 
+    name = st.text_input("Full Name")
+    age = st.number_input("Age", 1, 120)
+    blood = st.selectbox("Blood Group", ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"])
+    conditions = st.text_area("Health Conditions (Optional)")
+    emergency = st.text_input("Emergency Contact Number")
 
+    if st.button("Save Profile ✅"):
+        st.session_state.profile = {
+            "Name": name,
+            "Age": age,
+            "Blood Group": blood,
+            "Conditions": conditions,
+            "Emergency Contact": emergency
+        }
+        st.success("✅ Saved! (Only stored temporarily on your device)")
 
-# ---- MEDICAL PROFILE ----
-elif menu == "🧑‍⚕️ Medical Profile":
-    st.markdown("<div class='transparent-box center-text'>", unsafe_allow_html=True)
-    st.header("🧑‍⚕️ My Medical Details")
+    if st.session_state.profile:
+        st.json(st.session_state.profile)
 
-    name = st.text_input("👤 Name")
-    age = st.number_input("🎂 Age", 1, 120)
-    blood = st.selectbox("🩸 Blood Group", ["A+","A-","B+","B-","O+","O-","AB+","AB-"])
-    allergy = st.text_area("⚠️ Allergies")
-    condition = st.text_area("💊 Medical Conditions")
-
-    if st.button("💾 Save Profile"):
-        st.success("✅ Profile saved! (local display only, no database)")
-        st.info(f"Name: {name}, Age: {age}, Blood: {blood}")
-    st.markdown("</div>", unsafe_allow_html=True)
+# Footer
+st.markdown('<p class="footer-text">Made with ❤️ for India 🇮🇳 | LifeLink App</p>',
+            unsafe_allow_html=True)
