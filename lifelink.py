@@ -1,188 +1,134 @@
-import streamlit as st
-import folium
-from streamlit_folium import st_folium
-from geopy.geocoders import Nominatim
+st.markdown(
+    """
+    <style>
+    :root{
+        --em-red: #ff3b3b;
+        --em-orange: #ff8a3d;
+        --med-blue: #007bff;
+        --card-bg: rgba(255,255,255,0.08);
+        --glass: rgba(255,255,255,0.12);
+        --text: #ffffff;
+        --subtext: #d6e2f5;
+    }
 
-# ===================== PAGE CONFIG ======================
-st.set_page_config(page_title="LifeLink Emergency Locator", layout="wide")
+    /* Page background: Dark clean medical */
+    [data-testid="stAppViewContainer"] {
+        background: #0e1e2e;
+        color: var(--text);
+        font-family: "Inter", "Helvetica", Arial, sans-serif;
+    }
 
-# ===================== CUSTOM UI STYLING ======================
-custom_style = """
-<style>
+    /* Ensure ALL headings and labels visible */
+    h1, h2, h3, h4, h5, h6, label, p, span {
+        color: var(--text) !important;
+    }
 
-[data-testid="stAppViewContainer"] {
-    background-color: #0b0f1a;
-}
+    /* Input fields readable */
+    input, select, textarea {
+        color: black !important;
+        background: #ffffff !important;
+        border-radius: 8px !important;
+    }
+    .stTextInput>div>div>input {
+        color: black !important;
+    }
 
-[data-testid="stSidebar"] {
-    background-color: #111827 !important;
-    border-right: 2px solid rgba(255,0,0,0.4);
-}
+    /* Hero Area Styling */
+    .hero {
+        border-radius: 16px;
+        padding: 28px;
+        background: linear-gradient(90deg, rgba(255,59,59,0.20), rgba(0,123,255,0.15));
+        box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+    .hero-title {
+        font-size: 40px;
+        font-weight: 900;
+        color: white;
+        margin-bottom: 6px;
+    }
+    .hero-sub {
+        color: var(--subtext);
+        font-size: 17px;
+        margin-bottom: 14px;
+    }
 
-h1, h2, h3, h4, p, label, span, .stMarkdown, .css-1kyxreq {
-    color: #ffffff !important;
-    font-family: 'Arial', sans-serif;
-}
+    /* CTA Buttons */
+    .cta {
+        background: linear-gradient(90deg, var(--em-red), var(--em-orange));
+        color: white !important;
+        padding: 14px 26px;
+        border-radius: 12px;
+        font-weight: 800 !important;
+        font-size: 18px;
+        border: none !important;
+        cursor:pointer;
+    }
 
-.card {
-    border-radius: 14px;
-    padding: 18px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.12);
-    margin-top: 10px;
-}
+    /* Emergency Quick Panel */
+    .quick-panel {
+        background: var(--card-bg);
+        padding: 14px;
+        border-radius: 14px;
+        display:flex;
+        gap:12px;
+        justify-content: space-between;
+    }
+    .quick-btn {
+        background: rgba(255,255,255,0.08);
+        border: 2px solid rgba(255,255,255,0.10);
+        min-width: 160px;
+        padding: 14px;
+        border-radius: 14px;
+        text-align:center;
+        cursor:pointer;
+        transition:0.2s;
+    }
+    .quick-btn:hover { background: rgba(255,255,255,0.15); }
+    .quick-btn .title { font-weight:900; color:white; font-size:17px; }
+    .quick-btn .desc { color: var(--subtext); font-size:13px; margin-top:6px; }
 
-.stButton>button {
-    background: linear-gradient(90deg, #e60000, #ff4c4c);
-    color: white;
-    padding: 12px 26px;
-    border-radius: 12px;
-    font-size: 18px;
-    border: none;
-    transition: all 0.25s;
-}
+    /* Card background */
+    .card {
+        background: rgba(255,255,255,0.08);
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+    }
 
-.stButton>button:hover {
-    background: linear-gradient(90deg, #ff4c4c, #e60000);
-    transform: scale(1.05);
-}
+    /* Chat Box */
+    .chat-box {
+        background: rgba(255,255,255,0.10);
+        border-radius: 14px;
+        padding: 12px;
+    }
+    .bot-msg, .user-msg {
+        border-radius: 10px;
+        margin: 6px 0;
+        font-size:14px;
+    }
+    .user-msg {
+        text-align: right;
+        background: rgba(255,255,255,0.18);
+        padding:8px;
+    }
+    .bot-msg {
+        background: rgba(0,0,0,0.25);
+        padding:8px;
+    }
 
-.feature-box {
-    background: rgba(255,255,255,0.07);
-    border-left: 5px solid #ff4c4c;
-    padding: 18px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-}
+    /* Emergency Numbers contrast */
+    strong { color: white !important; }
+    small { color: var(--subtext) !important; }
 
-.footer-text {
-    text-align: center;
-    color: #dddddd;
-    font-size: 14px;
-    margin-top: 30px;
-}
+    /* Footer */
+    .footer {
+        color: var(--subtext);
+        font-size:13px;
+        text-align:center;
+        margin-top:16px;
+    }
 
-</style>
-"""
-st.markdown(custom_style, unsafe_allow_html=True)
-
-# ===================== SIDEBAR NAVIGATION ======================
-st.sidebar.title("🚨 LifeLink Menu")
-page = st.sidebar.radio("Menu",
-                        ["🏠 Home", "🏥 Hospital Locator",
-                         "🩹 First-Aid Guide", "👤 Medical Profile"])
-
-# ===================== HOME ======================
-if page == "🏠 Home":
-    st.markdown("<h1>🚨 LifeLink Emergency Locator</h1>", unsafe_allow_html=True)
-    st.write("Helping people reach medical help faster ❤️‍🩹")
-
-    st.markdown("---")
-    st.subheader("⚡ Quick Emergency Help")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if st.button("❤️ Heart Attack Help"):
-            st.warning("Call 108 🚑 Give aspirin if available. Time is critical!")
-
-    with col2:
-        if st.button("🧠 Stroke Help"):
-            st.warning("FAST → Face droop? Arm weak? Speech slurred? Act FAST & call 108!")
-
-    with col3:
-        if st.button("🚑 Accident Help"):
-            st.warning("Check breathing + bleeding. Do not move victim unless needed!")
-
-    st.markdown("---")
-    st.subheader("📞 Emergency Numbers (India)")
-    st.info("🚑 Ambulance: 108 | 👮 Police: 100 | 🔥 Fire: 101")
-
-    st.markdown("---")
-    st.subheader("✨ LifeLink Features")
-    st.markdown("""
-    ✅ Nearest Hospital Locator  
-    ✅ Quick First-Aid Guidance  
-    ✅ Store Emergency Profile  
-    ✅ Clean & Fast UI  
-    """)
-
-# ===================== HOSPITAL LOCATOR ======================
-elif page == "🏥 Hospital Locator":
-    st.header("🏥 Find Nearest Hospitals")
-
-    loc_input = st.text_input("Enter your location (City/Area)", placeholder="e.g., Mumbai, Pune, Delhi")
-
-    if st.button("Search Hospital 🏥"):
-        if not loc_input:
-            st.error("Please enter a location!")
-        else:
-            geolocator = Nominatim(user_agent="lifelink-app")
-            loc = geolocator.geocode(loc_input)
-
-            if loc:
-                st.success(f"📍 Found: {loc.address}")
-
-                m = folium.Map(location=[loc.latitude, loc.longitude], zoom_start=13)
-                folium.Marker(location=[loc.latitude, loc.longitude],
-                              tooltip="You are here",
-                              icon=folium.Icon(color="red")).add_to(m)
-
-                st_folium(m, width=900, height=450)
-            else:
-                st.error("Location not found! Try another spelling.")
-
-# ===================== FIRST AID GUIDE ======================
-elif page == "🩹 First-Aid Guide":
-    st.header("🩹 First Aid Guide")
-
-    with st.expander("❤️ CPR - For Cardiac Arrest"):
-        st.write("""
-        ✅ Push hard & fast (Chest center)  
-        ✅ 100–120 compressions per minute  
-        ✅ Call 108 immediately  
-        """)
-
-    with st.expander("🩸 Severe Bleeding"):
-        st.write("""
-        ✅ Apply pressure immediately  
-        ✅ Raise injured area  
-        ✅ Do NOT remove soaked bandage  
-        """)
-
-    with st.expander("🔥 Burns"):
-        st.write("""
-        ✅ Cool under water for 20 min  
-        ❌ Don't apply oil or toothpaste  
-        ✅ Cover loosely with clean cloth  
-        """)
-
-# ===================== MEDICAL PROFILE ======================
-elif page == "👤 Medical Profile":
-    st.header("👤 Emergency Medical Profile")
-
-    if "profile" not in st.session_state:
-        st.session_state.profile = {}
-
-    name = st.text_input("Full Name")
-    age = st.number_input("Age", 1, 120)
-    blood = st.selectbox("Blood Group", ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"])
-    conditions = st.text_area("Health Conditions (optional)")
-    emergency = st.text_input("Emergency Contact Number")
-
-    if st.button("💾 Save Profile"):
-        st.session_state.profile = {
-            "Name": name,
-            "Age": age,
-            "Blood Group": blood,
-            "Health": conditions,
-            "Emergency Contact": emergency
-        }
-        st.success("✅ Profile Saved Securely")
-
-    if st.session_state.profile:
-        st.subheader("📌 Saved Details")
-        st.json(st.session_state.profile)
-
-# Footer
-st.markdown('<p class="footer-text">Made for India 🇮🇳 | LifeLink Emergency App</p>', unsafe_allow_html=True)
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
