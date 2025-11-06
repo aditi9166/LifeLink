@@ -1,162 +1,192 @@
 import streamlit as st
-from geopy.geocoders import Nominatim
 import folium
 from streamlit_folium import st_folium
+from geopy.geocoders import Nominatim
 
-# ============ PAGE CONFIG ============
-st.set_page_config(page_title="LifeLink - Emergency Locator",
-                   page_icon="🚨",
-                   layout="wide")
+# ===================== PAGE CONFIG ======================
+st.set_page_config(page_title="LifeLink Emergency Locator", layout="wide")
 
-# ============ CUSTOM BACKGROUND ============
-# ============ CUSTOM BACKGROUND ============
+# ===================== CUSTOM UI STYLING ======================
 page_bg = """
 <style>
+
 [data-testid="stAppViewContainer"] {
-    background-image: url('https://images.unsplash.com/photo-1519494080410-f9aa76cb4283');
+    background-image: url('https://images.unsplash.com/photo-1584483766114-2cea6facdf57?q=80&w=1920&auto=format');
     background-size: cover;
-    background-repeat: no-repeat;
+    background-position: center;
     background-attachment: fixed;
 }
 
-[data-testid="stSidebar"] {
-    background-color: rgba(15, 15, 15, 0.95) !important;
-    backdrop-filter: blur(5px);
+[data-testid="stAppViewContainer"]:before {
+    content: "";
+    position: fixed;
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(3px);
+    z-index: -1;
 }
 
-h1, h2, h3, h4, label, p {
+[data-testid="stSidebar"] {
+    background-color: rgba(0,0,0,0.85) !important;
+    border-right: 2px solid rgba(255,0,0,0.3);
+}
+
+h1, h2, h3, h4, label, p, .stMarkdown {
     color: #ffffff !important;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Arial', sans-serif;
 }
 
 .card {
-    background-color: rgba(0, 0, 0, 0.6) !important;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 10px;
-    border: 1px solid rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+    background: rgba(15,15,15,0.65);
+    border-radius: 14px;
+    padding: 25px;
+    margin-top: 15px;
+    border: 1px solid rgba(255,255,255,0.2);
 }
 
 .stButton>button {
-    background: linear-gradient(90deg, #d40000, #ff4c4c);
+    background: linear-gradient(90deg, #ff1e1e, #b60000);
     color: white;
-    border-radius: 10px;
-    font-size: 18px;
+    padding: 12px 24px;
     border: none;
-    padding: 10px 18px;
     font-weight: bold;
-    transition: 0.3s;
+    border-radius: 10px;
+    transition: 0.25s;
+    font-size: 18px;
 }
 .stButton>button:hover {
-    transform: scale(1.05);
-    background: linear-gradient(90deg, #ff4c4c, #d40000);
+    transform: scale(1.07);
+    background: linear-gradient(90deg, #b60000, #ff1e1e);
 }
 
-.sidebar-title {
-    color: red;
-    font-size: 22px;
-    font-weight: bold;
+div.row-widget.stRadio > div{
+    color: white !important;
+    font-size: 18px !important;
+}
+
+.footer-text {
+    text-align: center;
+    color: #ddd;
+    margin-top: 40px;
+    font-size: 14px;
 }
 
 </style>
 """
 st.markdown(page_bg, unsafe_allow_html=True)
 
-# ============ APP TITLE ============
-st.markdown("<h1 class='card'>🚨 LifeLink Emergency Locator</h1>", unsafe_allow_html=True)
-st.write("Helping people reach medical help faster ❤️‍🩹")
+# ===================== SIDEBAR NAVIGATION ======================
+st.sidebar.title("Navigate")
+page = st.sidebar.radio("",
+                        ["🏠 Home", "🏥 Hospital Locator",
+                         "🩹 First-Aid Guide", "👤 Medical Profile"])
 
-# ============ SIDEBAR NAVIGATION ============
-menu = st.sidebar.radio("Navigate", ["🏠 Home", "🏥 Hospital Locator", "🩹 First-Aid Guide", "👤 Medical Profile"])
+# ===================== HOME PAGE ======================
+if page == "🏠 Home":
+    st.markdown("<h1>🚨 LifeLink Emergency Locator</h1>", unsafe_allow_html=True)
+    st.markdown("### Helping people reach medical help faster ❤️‍🩹")
 
-# ============ HOME PAGE ============
-if menu == "🏠 Home":
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown("---")
     st.subheader("Quick Emergency Access")
+
     col1, col2, col3 = st.columns(3)
-    
-    col1.button("💔 Heart Attack", key="heart")
-    col2.button("🧠 Stroke", key="stroke")
-    col3.button("🚗 Accident", key="accident")
-    
-    st.warning("📞 Emergency Numbers in India:")
+    with col1:
+        if st.button("❤️ Heart Attack"):
+            st.warning("Call 108 immediately! 🚑 Provide aspirin if available.")
+    with col2:
+        if st.button("🧠 Stroke"):
+            st.warning("FAST Test: Face drooping, Arm weakness, Speech trouble!")
+    with col3:
+        if st.button("🚑 Accident"):
+            st.warning("Check breathing + bleeding. Do not move injured unless necessary.")
+
+    st.markdown("### 📞 Emergency Numbers in India:")
     st.info("🚑 Ambulance: 108 | 👮 Police: 100 | 🔥 Fire: 101")
-    st.markdown("</div>", unsafe_allow_html=True)
 
-# ============ HOSPITAL LOCATOR ============
-elif menu == "🏥 Hospital Locator":
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("Find Nearby Hospitals 🏥")
+# ===================== HOSPITAL LOCATOR ======================
+elif page == "🏥 Hospital Locator":
 
-    city = st.text_input("Enter Location (City Name):", placeholder="e.g., Mumbai")
+    st.header("🏥 Find Nearest Hospitals")
 
-    if st.button("Search"):
-        geolocator = Nominatim(user_agent="lifelink_app")
-        location = geolocator.geocode(city)
+    user_location = st.text_input("Enter your location 🔍 (Example: Mumbai, Pune, Delhi)")
 
-        if location:
-            lat, lon = location.latitude, location.longitude
-            m = folium.Map(location=[lat, lon], zoom_start=13)
-
-            # Example hospitals (static for now)
-            hospitals = [
-                ("City Hospital", lat + 0.01, lon + 0.01),
-                ("Care MultiSpeciality", lat - 0.01, lon - 0.01),
-                ("Apollo Emergency Center", lat + 0.015, lon - 0.005)
-            ]
-
-            for hos in hospitals:
-                folium.Marker([hos[1], hos[2]], popup=hos[0], icon=folium.Icon(color="red")).add_to(m)
-
-            st_folium(m, width=700, height=450)
+    if st.button("Search Hospital"):
+        if user_location.strip() == "":
+            st.error("Please enter a valid location.")
         else:
-            st.error("📍 Location not found! Try another city.")
+            geolocator = Nominatim(user_agent="lifelink-app")
+            loc = geolocator.geocode(user_location)
 
-    st.markdown("</div>", unsafe_allow_html=True)
+            if loc:
+                m = folium.Map(location=[loc.latitude, loc.longitude], zoom_start=13)
+                folium.Marker([loc.latitude, loc.longitude],
+                              tooltip="You are here",
+                              icon=folium.Icon(color='red')).add_to(m)
 
-# ============ FIRST-AID GUIDE ============
-elif menu == "🩹 First-Aid Guide":
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("Life-Saving First Aid Instructions")
+                st.success(f"Location found ✅: {loc.address}")
 
-    help_option = st.selectbox("Select Emergency", 
-                               ["CPR for Cardiac Arrest", 
-                                "Bleeding Control", 
-                                "Choking", 
-                                "Burn Injury"])
+                st_folium(m, height=450, width=900)
+            else:
+                st.error("Location not found. Try a different city or spelling!")
 
-    guides = {
-        "CPR for Cardiac Arrest": "1️⃣ Check responsiveness\n2️⃣ Call 108\n3️⃣ Push hard & fast, 100-120 bpm\n4️⃣ Continue until help arrives",
-        "Bleeding Control": "Apply pressure + bandage | Keep wound elevated",
-        "Choking": "Perform Heimlich Maneuver | Back blows for children",
-        "Burn Injury": "Cool with water 20 min | Do NOT pop blisters"
-    }
+# ===================== FIRST-AID GUIDE ======================
+elif page == "🩹 First-Aid Guide":
+    st.header("🩹 First Aid Steps for Common Emergencies")
 
-    st.info(guides[help_option])
-    st.markdown("</div>", unsafe_allow_html=True)
+    with st.expander("❤️ CPR (Cardiac Arrest)"):
+        st.write("""
+        ✅ Check response  
+        ✅ Call 108  
+        ✅ Push hard + fast in chest center  
+        ✅ 100-120 compressions/min  
+        ✅ Keep going until help arrives
+        """)
 
-# ============ MEDICAL PROFILE (Local Session) ============
-elif menu == "👤 Medical Profile":
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("Your Emergency Health Details")
+    with st.expander("🚑 Severe Bleeding"):
+        st.write("""
+        ✅ Apply direct pressure  
+        ✅ Elevate wound  
+        ✅ Do NOT remove soaked bandages  
+        ✅ Call emergency services  
+        """)
+
+    with st.expander("🔥 Burns"):
+        st.write("""
+        ✅ Cool water 20 minutes  
+        ❌ Do NOT apply toothpaste or oil  
+        ✅ Cover with clean cloth  
+        """)
+
+# ===================== MEDICAL PROFILE (LOCAL STORAGE ONLY) ======================
+elif page == "👤 Medical Profile":
+    st.header("👤 Your Medical Details")
+
+    if "profile" not in st.session_state:
+        st.session_state.profile = {}
 
     name = st.text_input("Full Name")
-    age = st.text_input("Age")
-    allergies = st.text_input("Allergies (if any)")
-    medications = st.text_input("Current Medications")
-    emergency_contact = st.text_input("Emergency Contact Number")
+    age = st.number_input("Age", min_value=1, max_value=120)
+    blood = st.selectbox("Blood Group", ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"])
+    conditions = st.text_area("Medical Conditions (Optional)")
+    emergency = st.text_input("Emergency Contact Number")
 
-    if st.button("Save Profile"):
-        st.session_state["profile"] = [name, age, allergies, medications, emergency_contact]
-        st.success("✅ Saved Successfully!")
+    if st.button("Save Profile ✅"):
+        st.session_state.profile = {
+            "Name": name,
+            "Age": age,
+            "Blood Group": blood,
+            "Medical Conditions": conditions,
+            "Emergency Contact": emergency
+        }
+        st.success("Profile Saved Securely ✅")
 
-    if "profile" in st.session_state:
-        st.write("### Stored Medical Profile 📌")
-        st.table({
-            "Detail": ["Name", "Age", "Allergies", "Medications", "Emergency Contact"],
-            "Value": st.session_state["profile"]
-        })
+    if st.session_state.profile:
+        st.subheader("📌 Saved Information:")
+        st.json(st.session_state.profile)
 
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
+# Footer
+st.markdown('<p class="footer-text">Made for India 🇮🇳 | LifeLink Emergency App</p>', unsafe_allow_html=True)
