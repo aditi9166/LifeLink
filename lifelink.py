@@ -1,6 +1,4 @@
-%%writefile app.py
-# === LifeLink Emergency Locator - Single File Version ===
-# Just copy-paste and run in Google Colab.
+
 
 import streamlit as st
 import requests
@@ -135,3 +133,4 @@ elif page == "Medical Profile":
 
     st.write("Saved Profiles:")
     st.write(saved_profiles)
+
