@@ -9,30 +9,55 @@ st.set_page_config(page_title="LifeLink - Emergency Locator",
                    layout="wide")
 
 # ============ CUSTOM BACKGROUND ============
+# ============ CUSTOM BACKGROUND ============
 page_bg = """
 <style>
 [data-testid="stAppViewContainer"] {
-    background-image: url('https://images.unsplash.com/photo-1582550945154-66ea8fff07a7');
+    background-image: url('https://images.unsplash.com/photo-1519494080410-f9aa76cb4283');
     background-size: cover;
-    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
+
 [data-testid="stSidebar"] {
-    background-color: rgba(0,0,0,0.7) !important;
+    background-color: rgba(15, 15, 15, 0.95) !important;
+    backdrop-filter: blur(5px);
 }
-h1, h2, h3, label, p {
-    color: white !important;
+
+h1, h2, h3, h4, label, p {
+    color: #ffffff !important;
+    font-family: 'Segoe UI', sans-serif;
 }
-.stButton>button {
-    background-color: red;
-    color: white;
-    border-radius: 8px;
-    padding: 10px;
-}
+
 .card {
-    background-color: rgba(0,0,0,0.6);
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    border-radius: 12px;
     padding: 20px;
-    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
 }
+
+.stButton>button {
+    background: linear-gradient(90deg, #d40000, #ff4c4c);
+    color: white;
+    border-radius: 10px;
+    font-size: 18px;
+    border: none;
+    padding: 10px 18px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+.stButton>button:hover {
+    transform: scale(1.05);
+    background: linear-gradient(90deg, #ff4c4c, #d40000);
+}
+
+.sidebar-title {
+    color: red;
+    font-size: 22px;
+    font-weight: bold;
+}
+
 </style>
 """
 st.markdown(page_bg, unsafe_allow_html=True)
@@ -133,4 +158,5 @@ elif menu == "👤 Medical Profile":
         })
 
     st.markdown("</div>", unsafe_allow_html=True)
+
 
